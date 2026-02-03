@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator Distro - Auto Pricing</title>
+    <title>Distro Pricing Manager</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,295 +25,428 @@
         }
         input[type=number] { -moz-appearance: textfield; }
 
-        /* Custom Scrollbar for cleaner look */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         /* Toggle Switch Transition */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #6366f1;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #6366f1;
-        }
-        
+        .toggle-checkbox:checked { right: 0; border-color: #6366f1; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #6366f1; }
         .transition-all-300 { transition: all 0.3s ease-in-out; }
+
+        /* Animasi Slide */
+        .slide-in { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 min-h-screen pb-20 p-4">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <div class="max-w-6xl mx-auto">
         
-        <!-- HEADER -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-indigo-900 flex items-center gap-2">
-                    <i data-lucide="shopping-bag" class="w-6 h-6 text-indigo-600"></i>
-                    Distro Pricing Generator
-                </h1>
-                <p class="text-gray-500 text-sm mt-1">Input biaya & margin, sistem akan membuatkan harga jual terbaik.</p>
+        <!-- === VIEW 1: HOME / DAFTAR PROYEK === -->
+        <div id="view-home" class="space-y-6">
+            <!-- Header Home -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-indigo-900 flex items-center gap-2">
+                        <i data-lucide="folder-open" class="w-6 h-6 text-indigo-600"></i>
+                        Daftar Proyek
+                    </h1>
+                    <p class="text-gray-500 text-sm mt-1">Kelola harga modal dan jual untuk semua produk distromu.</p>
+                </div>
+                <button onclick="createNewProject()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i> Buat Proyek Baru
+                </button>
             </div>
-            <div class="bg-indigo-50 px-4 py-2 rounded-lg text-indigo-700 font-medium text-sm flex items-center gap-2">
-                <i data-lucide="target" class="w-4 h-4"></i> Mode: Auto Pricing
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- List Proyek -->
+            <div id="project-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Card Proyek akan di-render di sini oleh JS -->
+            </div>
             
-            <!-- KOLOM KIRI: INPUT DATA -->
-            <div class="lg:col-span-7 space-y-6">
-                
-                <!-- 1. HPP PRODUKSI -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-700">
-                            <i data-lucide="tag" class="w-5 h-5 text-blue-500"></i>
-                            1. HPP Produk (Per Pcs)
-                        </h2>
-                        <button onclick="addItem('production')" class="text-xs flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-full font-medium transition-colors">
-                            <i data-lucide="plus" class="w-3 h-3"></i> Tambah Item
-                        </button>
-                    </div>
-                    
-                    <!-- Container List -->
-                    <div id="production-list" class="space-y-2">
-                        <!-- Items rendered by JS -->
-                    </div>
-
-                    <div class="pt-3 mt-2 border-t flex justify-between font-bold text-gray-700">
-                        <span>Total HPP Fisik</span>
-                        <span id="total-hpp">Rp 0</span>
-                    </div>
+            <!-- Empty State (Hidden by default) -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-center">
+                <div class="bg-gray-100 p-4 rounded-full mb-4">
+                    <i data-lucide="package-open" class="w-8 h-8 text-gray-400"></i>
                 </div>
-
-                <!-- 2. OPERASIONAL -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-700">
-                            <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
-                            2. Operasional (Per Pcs)
-                        </h2>
-                        <button onclick="addItem('operational')" class="text-xs flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-600 px-3 py-1.5 rounded-full font-medium transition-colors">
-                            <i data-lucide="plus" class="w-3 h-3"></i> Tambah Biaya
-                        </button>
-                    </div>
-
-                    <!-- Container List -->
-                    <div id="operational-list" class="space-y-2">
-                        <!-- Items rendered by JS -->
-                    </div>
-
-                    <div class="pt-3 mt-2 border-t flex justify-between font-bold text-gray-700">
-                        <span>Total Operasional</span>
-                        <span id="total-ops">Rp 0</span>
-                    </div>
-                </div>
-
-                <!-- 3. STRATEGI HARGA -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-indigo-100 ring-4 ring-indigo-50/50">
-                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-indigo-900">
-                        <i data-lucide="calculator" class="w-5 h-5"></i>
-                        3. Tentukan Target Profit
-                    </h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        
-                        <!-- Target Margin -->
-                        <div>
-                            <label class="block text-sm font-bold text-emerald-800 mb-1">Target Margin Profit (%)</label>
-                            <div class="relative">
-                                <input 
-                                    type="number" id="input-target-margin" value="30" min="0" max="99" step="0.1"
-                                    class="w-full pl-4 pr-10 py-3 border-2 border-emerald-100 rounded-xl focus:border-emerald-500 focus:outline-none text-xl font-bold text-emerald-900 placeholder-gray-300 transition-colors"
-                                    oninput="calculateAll()"
-                                    onfocus="this.select()"
-                                >
-                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">Disarankan: 25% - 40%.</p>
-                        </div>
-
-                        <!-- Admin Fee -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-1">Potongan Marketplace (%)</label>
-                            <div class="relative">
-                                <input 
-                                    type="number" id="input-admin-fee" value="10" min="0" step="0.1"
-                                    class="w-full pl-4 pr-10 py-3 border rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none text-xl font-bold text-orange-800 placeholder-gray-300"
-                                    oninput="calculateAll()"
-                                    onfocus="this.select()"
-                                >
-                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Toggle Harga Psikologis -->
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors" onclick="togglePsychologicalPrice()">
-                        <div class="flex items-center gap-3">
-                            <div id="icon-psycho-bg" class="p-2 rounded-lg bg-indigo-100 text-indigo-600 transition-colors">
-                                <i data-lucide="sparkles" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <div class="font-semibold text-gray-800">Harga Psikologis (Marketing)</div>
-                                <div id="text-psycho-status" class="text-xs text-gray-500">Aktif: Harga dibulatkan ke angka cantik (contoh: 99.000).</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Custom Toggle UI -->
-                        <div id="toggle-track" class="w-12 h-6 rounded-full p-1 transition-colors bg-indigo-500">
-                            <div id="toggle-dot" class="w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform translate-x-6"></div>
-                        </div>
-                        <!-- Hidden Checkbox for logic -->
-                        <input type="checkbox" id="check-psychological" class="hidden" checked onchange="calculateAll()">
-                    </div>
-
-                    <!-- Target Penjualan -->
-                    <div class="mt-6 pt-4 border-t border-dashed border-gray-200">
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Target Penjualan Bulan Ini (Pcs)</label>
-                        <div class="relative">
-                            <input 
-                                type="number" id="input-sales-target" value="24" min="1"
-                                class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg font-bold text-blue-900 placeholder-gray-300"
-                                oninput="calculateAll()"
-                                onfocus="this.select()"
-                            >
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Pcs</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KOLOM KANAN: HASIL -->
-            <div class="lg:col-span-5 space-y-6">
-                
-                <!-- CARD HASIL UTAMA -->
-                <div id="result-card" class="p-6 rounded-3xl shadow-xl text-white transition-all-300 relative overflow-hidden bg-gradient-to-br from-indigo-600 to-violet-700">
-                    
-                    <!-- Background Decoration -->
-                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-
-                    <div class="relative z-10 text-center py-2">
-                        <div class="text-indigo-200 text-sm font-medium mb-1 tracking-wide uppercase">Rekomendasi Harga Jual</div>
-                        
-                        <div id="display-final-price" class="text-5xl font-extrabold mb-3 tracking-tight">Rp 0</div>
-                        
-                        <div id="wrapper-raw-price" class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs text-indigo-100 mb-4 transition-all">
-                            Matematika Murni: <span id="display-raw-price">Rp 0</span>
-                        </div>
-
-                        <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10 flex justify-between items-center mt-2">
-                            <div class="text-left">
-                                <div class="text-xs text-indigo-200">Profit Bersih/Pcs</div>
-                                <div id="display-net-profit" class="text-xl font-bold text-emerald-300">Rp 0</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xs text-indigo-200">Margin Real</div>
-                                <div id="display-real-margin" class="text-xl font-bold text-white">0%</div>
-                            </div>
-                        </div>
-
-                        <div id="alert-loss" class="hidden mt-4 bg-red-800/30 p-3 rounded-lg flex items-center justify-center gap-2 text-sm text-red-100 font-bold">
-                            <i data-lucide="alert-circle" class="w-5 h-5"></i>
-                            <p>Margin/Biaya tidak masuk akal!</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- BREAKDOWN BIAYA -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 class="text-gray-800 font-semibold mb-4 text-sm uppercase tracking-wide">Breakdown Biaya</h3>
-                    <div class="space-y-3 text-sm">
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-500">Modal Produksi</span>
-                            <span id="breakdown-hpp" class="text-gray-700 font-medium">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-500">Biaya Operasional</span>
-                            <span id="breakdown-ops" class="text-gray-700 font-medium">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1 bg-orange-50 px-3 py-2 rounded-lg -mx-2">
-                            <span class="text-orange-700 font-medium">Admin Marketplace (<span id="text-admin-pct">10</span>%)</span>
-                            <span id="breakdown-admin" class="text-orange-700 font-bold">Rp 0</span>
-                        </div>
-                        <div class="border-t border-dashed border-gray-200 pt-3 mt-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-500">Titik Balik Modal (BEP)</span>
-                                <span id="breakdown-bep" class="text-gray-500">Rp 0</span>
-                            </div>
-                            <p class="text-[10px] text-gray-400 mt-1">Jangan jual di bawah harga BEP ini.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VISI MASA DEPAN -->
-                <div id="vision-card" class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg transition-all-300">
-                    <div class="flex items-center gap-2 mb-4 text-yellow-400">
-                        <i data-lucide="crown" class="w-5 h-5 fill-yellow-400 text-yellow-400"></i>
-                        <span class="font-bold">Potensi Cuan Bulanan</span>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                            <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <i data-lucide="target" class="w-4 h-4"></i> Target (<span id="text-target-pcs">0</span> pcs)
-                            </div>
-                            <div id="vision-monthly" class="font-bold text-xl">Rp 0</div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2 text-sm text-slate-300">
-                                <i data-lucide="trending-up" class="w-4 h-4"></i> Jika laku 100 pcs
-                            </div>
-                            <div id="vision-100" class="font-bold text-lg text-emerald-400">Rp 0</div>
-                        </div>
-                    </div>
-                </div>
-
+                <h3 class="text-lg font-semibold text-gray-700">Belum ada proyek</h3>
+                <p class="text-gray-500 text-sm max-w-xs mx-auto mt-1">Mulai hitung HPP dan tentukan harga jual produk pertamamu.</p>
             </div>
         </div>
+
+
+        <!-- === VIEW 2: CALCULATOR === -->
+        <div id="view-calculator" class="hidden space-y-6 slide-in">
+            
+            <!-- Header Calculator (Sticky Top) -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between sticky top-2 z-50 ring-1 ring-gray-100/50 backdrop-blur-md bg-white/90">
+                <div class="flex items-center gap-3 flex-1">
+                    <button onclick="saveAndClose()" class="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors" title="Kembali">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-400 block ml-1">Nama Proyek</label>
+                        <input type="text" id="project-title-input" 
+                            class="text-xl font-bold text-indigo-900 bg-transparent border-none focus:ring-0 p-0 w-full placeholder-gray-300" 
+                            placeholder="Contoh: Kaos Oversize Hitam"
+                            oninput="updateProjectTitle(this.value)"
+                        >
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="deleteCurrentProject()" class="text-red-500 hover:bg-red-50 p-2 rounded-lg text-sm font-medium transition-colors" title="Hapus Proyek">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                    <div class="bg-indigo-50 px-3 py-1.5 rounded-lg text-indigo-700 font-bold text-sm hidden sm:block">
+                        Auto-Saved
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- KOLOM KIRI: INPUT DATA -->
+                <div class="lg:col-span-7 space-y-6">
+                    
+                    <!-- 1. HPP PRODUKSI -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-700">
+                                <i data-lucide="tag" class="w-5 h-5 text-blue-500"></i>
+                                1. HPP Produk (Per Pcs)
+                            </h2>
+                            <button onclick="addItem('production')" class="text-xs flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-full font-medium transition-colors">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Tambah Item
+                            </button>
+                        </div>
+                        <div id="production-list" class="space-y-2"></div>
+                        <div class="pt-3 mt-2 border-t flex justify-between font-bold text-gray-700">
+                            <span>Total HPP Fisik</span>
+                            <span id="total-hpp">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. OPERASIONAL -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-700">
+                                <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
+                                2. Operasional (Per Pcs)
+                            </h2>
+                            <button onclick="addItem('operational')" class="text-xs flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-600 px-3 py-1.5 rounded-full font-medium transition-colors">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Tambah Biaya
+                            </button>
+                        </div>
+                        <div id="operational-list" class="space-y-2"></div>
+                        <div class="pt-3 mt-2 border-t flex justify-between font-bold text-gray-700">
+                            <span>Total Operasional</span>
+                            <span id="total-ops">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. STRATEGI HARGA -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-indigo-100 ring-4 ring-indigo-50/50">
+                        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-indigo-900">
+                            <i data-lucide="calculator" class="w-5 h-5"></i>
+                            3. Tentukan Target Profit
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <!-- Target Margin -->
+                            <div>
+                                <label class="block text-sm font-bold text-emerald-800 mb-1">Target Margin Profit (%)</label>
+                                <div class="relative">
+                                    <input type="number" id="input-target-margin" class="w-full pl-4 pr-10 py-3 border-2 border-emerald-100 rounded-xl focus:border-emerald-500 focus:outline-none text-xl font-bold text-emerald-900 placeholder-gray-300" oninput="calculateAll()" onfocus="this.select()">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Disarankan: 25% - 40%.</p>
+                            </div>
+                            <!-- Admin Fee -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Potongan Marketplace (%)</label>
+                                <div class="relative">
+                                    <input type="number" id="input-admin-fee" class="w-full pl-4 pr-10 py-3 border rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none text-xl font-bold text-orange-800 placeholder-gray-300" oninput="calculateAll()" onfocus="this.select()">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Toggle Harga Psikologis -->
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors" onclick="togglePsychologicalPrice()">
+                            <div class="flex items-center gap-3">
+                                <div id="icon-psycho-bg" class="p-2 rounded-lg bg-indigo-100 text-indigo-600 transition-colors">
+                                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-800">Harga Psikologis</div>
+                                    <div id="text-psycho-status" class="text-xs text-gray-500">Aktif: Dibulatkan ke x9.000</div>
+                                </div>
+                            </div>
+                            <div id="toggle-track" class="w-12 h-6 rounded-full p-1 transition-colors bg-indigo-500">
+                                <div id="toggle-dot" class="w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform translate-x-6"></div>
+                            </div>
+                            <input type="checkbox" id="check-psychological" class="hidden" onchange="calculateAll()">
+                        </div>
+
+                        <!-- Target Penjualan -->
+                        <div class="mt-6 pt-4 border-t border-dashed border-gray-200">
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Target Penjualan Bulan Ini (Pcs)</label>
+                            <div class="relative">
+                                <input type="number" id="input-sales-target" class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg font-bold text-blue-900 placeholder-gray-300" oninput="calculateAll()" onfocus="this.select()">
+                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Pcs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOLOM KANAN: HASIL -->
+                <div class="lg:col-span-5 space-y-6">
+                    <!-- CARD HASIL -->
+                    <div id="result-card" class="p-6 rounded-3xl shadow-xl text-white transition-all-300 relative overflow-hidden bg-gradient-to-br from-indigo-600 to-violet-700">
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="relative z-10 text-center py-2">
+                            <div class="text-indigo-200 text-sm font-medium mb-1 tracking-wide uppercase">Rekomendasi Harga Jual</div>
+                            <div id="display-final-price" class="text-5xl font-extrabold mb-3 tracking-tight">Rp 0</div>
+                            <div id="wrapper-raw-price" class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs text-indigo-100 mb-4 transition-all">
+                                Matematika Murni: <span id="display-raw-price">Rp 0</span>
+                            </div>
+                            <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10 flex justify-between items-center mt-2">
+                                <div class="text-left">
+                                    <div class="text-xs text-indigo-200">Profit Bersih/Pcs</div>
+                                    <div id="display-net-profit" class="text-xl font-bold text-emerald-300">Rp 0</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-indigo-200">Margin Real</div>
+                                    <div id="display-real-margin" class="text-xl font-bold text-white">0%</div>
+                                </div>
+                            </div>
+                            <div id="alert-loss" class="hidden mt-4 bg-red-800/30 p-3 rounded-lg flex items-center justify-center gap-2 text-sm text-red-100 font-bold">
+                                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                                <p>Margin/Biaya tidak masuk akal!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BREAKDOWN -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="text-gray-800 font-semibold mb-4 text-sm uppercase tracking-wide">Breakdown Biaya</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between items-center py-1">
+                                <span class="text-gray-500">Modal Produksi</span>
+                                <span id="breakdown-hpp" class="text-gray-700 font-medium">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1">
+                                <span class="text-gray-500">Biaya Operasional</span>
+                                <span id="breakdown-ops" class="text-gray-700 font-medium">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 bg-orange-50 px-3 py-2 rounded-lg -mx-2">
+                                <span class="text-orange-700 font-medium">Admin Marketplace (<span id="text-admin-pct">10</span>%)</span>
+                                <span id="breakdown-admin" class="text-orange-700 font-bold">Rp 0</span>
+                            </div>
+                            <div class="border-t border-dashed border-gray-200 pt-3 mt-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-500">Titik Balik Modal (BEP)</span>
+                                    <span id="breakdown-bep" class="text-gray-500">Rp 0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VISI MASA DEPAN -->
+                    <div id="vision-card" class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg transition-all-300">
+                        <div class="flex items-center gap-2 mb-4 text-yellow-400">
+                            <i data-lucide="crown" class="w-5 h-5 fill-yellow-400 text-yellow-400"></i>
+                            <span class="font-bold">Potensi Cuan Bulanan</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                                <div class="flex items-center gap-2 text-sm text-slate-300">
+                                    <i data-lucide="target" class="w-4 h-4"></i> Target (<span id="text-target-pcs">0</span> pcs)
+                                </div>
+                                <div id="vision-monthly" class="font-bold text-xl">Rp 0</div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 text-sm text-slate-300">
+                                    <i data-lucide="trending-up" class="w-4 h-4"></i> Jika laku 100 pcs
+                                </div>
+                                <div id="vision-100" class="font-bold text-lg text-emerald-400">Rp 0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // --- DATA AWAL ---
-        let productionItems = [
-            { id: 1, name: 'Kaos Polos (30s/24s)', cost: 30000 },
-            { id: 2, name: 'Jasa/Bahan Sablon (DTF)', cost: 15000 },
-            { id: 3, name: 'Listrik & Press', cost: 1000 },
-            { id: 4, name: 'Label & Hangtag', cost: 1000 },
-            { id: 5, name: 'Plastik Packing', cost: 2000 },
-        ];
+        // --- GLOBAL STATE ---
+        let projects = [];
+        let activeProjectId = null;
+        let activeProject = null;
 
-        let operationalItems = [
-            { id: 1, name: 'Budget Iklan/Ads', cost: 5000 },
-            { id: 2, name: 'Dana Darurat/Tabungan', cost: 5000 },
-            { id: 3, name: 'Subsidi Voucher Diskon', cost: 0 },
-        ];
+        // --- LOCAL STORAGE MANAGER ---
+        function loadProjects() {
+            const saved = localStorage.getItem('distro_projects');
+            if (saved) {
+                projects = JSON.parse(saved);
+            } else {
+                projects = [];
+            }
+            renderProjectList();
+        }
 
-        // --- HELPER FUNCTIONS ---
-        const formatRupiah = (num) => {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-            }).format(num);
-        };
+        function saveProjects() {
+            localStorage.setItem('distro_projects', JSON.stringify(projects));
+        }
 
-        const generateId = () => Date.now() + Math.random().toString(16).slice(2);
+        // --- NAVIGATION ---
+        function showHome() {
+            document.getElementById('view-home').classList.remove('hidden');
+            document.getElementById('view-calculator').classList.add('hidden');
+            activeProjectId = null;
+            activeProject = null;
+            loadProjects(); // Refresh list
+        }
 
-        // --- RENDER LISTS ---
+        function showCalculator() {
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-calculator').classList.remove('hidden');
+        }
+
+        function saveAndClose() {
+            saveProjects(); // Ensure saved
+            showHome();
+        }
+
+        // --- PROJECT MANAGEMENT ---
+        function createNewProject() {
+            const newId = Date.now().toString();
+            const newProject = {
+                id: newId,
+                title: 'Proyek Baru ' + new Date().toLocaleDateString('id-ID'),
+                productionItems: [
+                    { id: Date.now() + 1, name: 'Kaos Polos', cost: 30000 },
+                    { id: Date.now() + 2, name: 'Sablon DTF', cost: 15000 }
+                ],
+                operationalItems: [
+                    { id: Date.now() + 3, name: 'Iklan/Ads', cost: 5000 }
+                ],
+                settings: {
+                    margin: 30,
+                    adminFee: 10,
+                    salesTarget: 24,
+                    usePsychological: true
+                },
+                lastModified: Date.now()
+            };
+            
+            projects.push(newProject);
+            saveProjects();
+            openProject(newId);
+        }
+
+        function openProject(id) {
+            activeProjectId = id;
+            activeProject = projects.find(p => p.id === id);
+            
+            if (!activeProject) return showHome();
+
+            // Load Data ke UI Inputs
+            document.getElementById('project-title-input').value = activeProject.title;
+            document.getElementById('input-target-margin').value = activeProject.settings.margin;
+            document.getElementById('input-admin-fee').value = activeProject.settings.adminFee;
+            document.getElementById('input-sales-target').value = activeProject.settings.salesTarget;
+            
+            // Set Checkbox logic
+            const checkbox = document.getElementById('check-psychological');
+            checkbox.checked = activeProject.settings.usePsychological;
+            updateToggleUI();
+
+            renderItems('production');
+            renderItems('operational');
+            calculateAll();
+            showCalculator();
+        }
+
+        function deleteCurrentProject() {
+            if (confirm('Yakin ingin menghapus proyek ini?')) {
+                projects = projects.filter(p => p.id !== activeProjectId);
+                saveProjects();
+                showHome();
+            }
+        }
+
+        function updateProjectTitle(val) {
+            if (activeProject) {
+                activeProject.title = val;
+                activeProject.lastModified = Date.now();
+                saveProjects();
+            }
+        }
+
+        function renderProjectList() {
+            const container = document.getElementById('project-list-container');
+            const emptyState = document.getElementById('empty-state');
+            container.innerHTML = '';
+
+            if (projects.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Sort by newest
+            projects.sort((a, b) => b.lastModified - a.lastModified);
+
+            projects.forEach(p => {
+                // Hitung sekilas untuk preview di card
+                const totalHPP = p.productionItems.reduce((acc, i) => acc + i.cost, 0) + 
+                                 p.operationalItems.reduce((acc, i) => acc + i.cost, 0);
+                
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer relative group';
+                card.onclick = () => openProject(p.id);
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="bg-indigo-50 p-2 rounded-lg text-indigo-600">
+                            <i data-lucide="shirt" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs text-gray-400">${new Date(p.lastModified).toLocaleDateString('id-ID')}</span>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg mb-1 truncate">${p.title}</h3>
+                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                        <span>Margin: ${p.settings.margin}%</span>
+                        <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                        <span>Modal: ${formatRupiah(totalHPP)}</span>
+                    </div>
+                    <div class="text-indigo-600 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                        Buka Proyek <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // --- CALCULATOR LOGIC ---
+        function generateId() { return Date.now() + Math.random().toString(16).slice(2); }
+
         function renderItems(type) {
+            if (!activeProject) return;
             const container = document.getElementById(type === 'production' ? 'production-list' : 'operational-list');
-            const items = type === 'production' ? productionItems : operationalItems;
+            const items = type === 'production' ? activeProject.productionItems : activeProject.operationalItems;
             
             container.innerHTML = '';
             
-            items.forEach((item, index) => {
+            items.forEach((item) => {
                 const div = document.createElement('div');
                 div.className = 'flex items-center gap-2 group mb-2';
                 div.innerHTML = `
@@ -339,42 +472,67 @@
                 `;
                 container.appendChild(div);
             });
-            
-            // Re-initialize icons for new elements
             lucide.createIcons();
         }
 
-        // --- STATE ACTIONS ---
         function addItem(type) {
-            const newItem = { id: generateId(), name: type === 'production' ? 'Item Baru' : 'Biaya Baru', cost: 0 };
-            if (type === 'production') productionItems.push(newItem);
-            else operationalItems.push(newItem);
+            if (!activeProject) return;
+            const newItem = { id: Date.now(), name: type === 'production' ? 'Item Baru' : 'Biaya Baru', cost: 0 };
+            
+            if (type === 'production') activeProject.productionItems.push(newItem);
+            else activeProject.operationalItems.push(newItem);
+            
             renderItems(type);
+            saveProjects(); // Auto save
             calculateAll();
         }
 
         function removeItem(type, id) {
-            if (type === 'production') productionItems = productionItems.filter(i => i.id != id);
-            else operationalItems = operationalItems.filter(i => i.id != id);
+            if (!activeProject) return;
+            if (type === 'production') {
+                activeProject.productionItems = activeProject.productionItems.filter(i => i.id != id);
+            } else {
+                activeProject.operationalItems = activeProject.operationalItems.filter(i => i.id != id);
+            }
             renderItems(type);
+            saveProjects();
             calculateAll();
         }
 
         function updateItem(type, id, field, value) {
-            const items = type === 'production' ? productionItems : operationalItems;
+            if (!activeProject) return;
+            const items = type === 'production' ? activeProject.productionItems : activeProject.operationalItems;
             const item = items.find(i => i.id == id);
+            
             if (item) {
-                if (field === 'cost') item[field] = Number(value);
-                else item[field] = value;
-                calculateAll();
+                if (field === 'cost') {
+                    // Fix: Pastikan konversi number aman
+                    const numVal = value === '' ? 0 : Number(value);
+                    item[field] = numVal;
+                } else {
+                    item[field] = value;
+                }
+                
+                // PENTING: Jangan renderItems() di sini karena akan reset fokus input
+                // Cukup calculateAll() untuk update total secara real-time
+                saveProjects();
+                calculateAll(); 
             }
         }
 
         function togglePsychologicalPrice() {
+            if (!activeProject) return;
             const checkbox = document.getElementById('check-psychological');
             checkbox.checked = !checkbox.checked;
             
-            // Update UI Toggle
+            activeProject.settings.usePsychological = checkbox.checked;
+            updateToggleUI();
+            saveProjects();
+            calculateAll();
+        }
+
+        function updateToggleUI() {
+            const checkbox = document.getElementById('check-psychological');
             const track = document.getElementById('toggle-track');
             const dot = document.getElementById('toggle-dot');
             const iconBg = document.getElementById('icon-psycho-bg');
@@ -385,19 +543,16 @@
                 dot.classList.replace('translate-x-0', 'translate-x-6');
                 iconBg.classList.replace('bg-gray-200', 'bg-indigo-100');
                 iconBg.classList.replace('text-gray-500', 'text-indigo-600');
-                statusText.innerText = 'Aktif: Harga dibulatkan ke angka cantik (contoh: 99.000).';
+                statusText.innerText = 'Aktif: Dibulatkan ke x9.000';
             } else {
                 track.classList.replace('bg-indigo-500', 'bg-gray-300');
                 dot.classList.replace('translate-x-6', 'translate-x-0');
                 iconBg.classList.replace('bg-indigo-100', 'bg-gray-200');
                 iconBg.classList.replace('text-indigo-600', 'text-gray-500');
-                statusText.innerText = 'Nonaktif: Harga sesuai hitungan matematika.';
+                statusText.innerText = 'Nonaktif: Sesuai matematika';
             }
-
-            calculateAll();
         }
 
-        // --- CORE CALCULATION ---
         function getPsychologicalPrice(rawPrice) {
             const rounded = Math.ceil(rawPrice / 1000) * 1000;
             let base = Math.ceil(rounded / 10000) * 10000;
@@ -407,18 +562,26 @@
         }
 
         function calculateAll() {
-            // Get Inputs
+            if (!activeProject) return;
+
+            // Get Input Values dari DOM (karena user mungkin baru ngetik)
             const marginPct = Number(document.getElementById('input-target-margin').value) || 0;
             const adminPct = Number(document.getElementById('input-admin-fee').value) || 0;
             const salesTarget = Number(document.getElementById('input-sales-target').value) || 0;
             const usePsycho = document.getElementById('check-psychological').checked;
 
-            // 1. Total Costs
-            const totalHPP = productionItems.reduce((acc, item) => acc + item.cost, 0);
-            const totalOps = operationalItems.reduce((acc, item) => acc + item.cost, 0);
+            // Update state settings
+            activeProject.settings.margin = marginPct;
+            activeProject.settings.adminFee = adminPct;
+            activeProject.settings.salesTarget = salesTarget;
+            // usePsychological updated in toggle func
+
+            // Calc Costs
+            const totalHPP = activeProject.productionItems.reduce((acc, item) => acc + item.cost, 0);
+            const totalOps = activeProject.operationalItems.reduce((acc, item) => acc + item.cost, 0);
             const totalCost = totalHPP + totalOps;
 
-            // 2. Calc Price
+            // Calc Price
             const totalDeduction = adminPct + marginPct;
             let divisor = 1 - (totalDeduction / 100);
             
@@ -426,10 +589,10 @@
             if (divisor > 0.01) rawPrice = totalCost / divisor;
             else rawPrice = 0;
 
-            // 3. Final Price Logic
+            // Final Logic
             let finalPrice = usePsycho ? getPsychologicalPrice(rawPrice) : Math.ceil(rawPrice);
 
-            // 4. Reverse Calc for Real Data
+            // Reverse Calc
             const adminFeeRp = finalPrice * (adminPct / 100);
             const netProfit = finalPrice - totalCost - adminFeeRp;
             const realMargin = finalPrice > 0 ? (netProfit / finalPrice) * 100 : 0;
@@ -440,13 +603,10 @@
             const monthlyProfit = netProfit * salesTarget;
             const profit100 = netProfit * 100;
 
-            // --- UPDATE DOM ---
-            
-            // Totals
+            // Update UI
             document.getElementById('total-hpp').innerText = formatRupiah(totalHPP);
             document.getElementById('total-ops').innerText = formatRupiah(totalOps);
 
-            // Main Card Result
             const card = document.getElementById('result-card');
             const alertLoss = document.getElementById('alert-loss');
             
@@ -455,12 +615,8 @@
             document.getElementById('display-net-profit').innerText = formatRupiah(netProfit);
             document.getElementById('display-real-margin').innerText = realMargin.toFixed(1) + '%';
             
-            // Hide/Show Raw Price if Psycho is off
-            const wrapRaw = document.getElementById('wrapper-raw-price');
-            if(usePsycho && rawPrice > 0) wrapRaw.style.display = 'inline-block';
-            else wrapRaw.style.display = 'none';
+            document.getElementById('wrapper-raw-price').style.display = (usePsycho && rawPrice > 0) ? 'inline-block' : 'none';
 
-            // Card Color & Alert
             if (netProfit > 0) {
                 card.classList.remove('from-red-500', 'to-pink-600');
                 card.classList.add('from-indigo-600', 'to-violet-700');
@@ -473,24 +629,26 @@
                 document.getElementById('vision-card').style.opacity = '0.5';
             }
 
-            // Breakdown
             document.getElementById('breakdown-hpp').innerText = formatRupiah(totalHPP);
             document.getElementById('breakdown-ops').innerText = formatRupiah(totalOps);
             document.getElementById('text-admin-pct').innerText = adminPct;
             document.getElementById('breakdown-admin').innerText = formatRupiah(adminFeeRp);
             document.getElementById('breakdown-bep').innerText = formatRupiah(bep);
 
-            // Vision
             document.getElementById('text-target-pcs').innerText = salesTarget;
             document.getElementById('vision-monthly').innerText = formatRupiah(monthlyProfit);
             document.getElementById('vision-100').innerText = formatRupiah(profit100);
         }
 
+        function formatRupiah(num) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0
+            }).format(num);
+        }
+
         // --- INIT ---
         window.addEventListener('DOMContentLoaded', () => {
-            renderItems('production');
-            renderItems('operational');
-            calculateAll();
+            loadProjects();
             lucide.createIcons();
         });
 
